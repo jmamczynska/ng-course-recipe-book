@@ -1,25 +1,14 @@
 import {Recipe} from './recipe.model';
 import {Injectable} from '@angular/core';
 import {Ingredient} from '../shared/ingredient.model';
-import {ShoppingListService} from '../shopping-list/shopping-list.service';
 import {Subject} from 'rxjs';
+import {ShoppingListService} from '../shopping-list/shopping-list.service';
 
 @Injectable()
 export class RecipeService {
   recipesChanged = new Subject<Recipe[]>();
 
   private recipes: Recipe[] = [];
-  // [
-  //   new Recipe('Pasta', 'Tomato pasta', 'https://images.media-allrecipes.com/images/56589.png',
-  //       [
-  //           new Ingredient('Onion', 1),
-  //           new Ingredient('Tomato', 2)
-  //       ]),
-  //   new Recipe('Lamb meet', 'Roasted lamb', 'https://images.media-allrecipes.com/images/56588.png', [
-  //     new Ingredient('Meat', 4),
-  //     new Ingredient('Potato', 8)
-  //   ])
-  // ];
 
   constructor(private shoppingListService: ShoppingListService) {
   }

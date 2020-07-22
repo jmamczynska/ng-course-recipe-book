@@ -11,7 +11,8 @@ export class RecipeResolverService implements Resolve<Recipe[]> {
   constructor(private dateStorageService: DataStorageService, private recipeService: RecipeService) {
   }
 
-  resolve(route: ActivatedRouteSnapshot,
+  resolve(
+      route: ActivatedRouteSnapshot,
       state: RouterStateSnapshot): Observable<Recipe[]> | Promise<Recipe[]> | Recipe[] {
     const recipe = this.recipeService.getRecipes();
     if (recipe.length === 0) {

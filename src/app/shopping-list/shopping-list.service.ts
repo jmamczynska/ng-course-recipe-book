@@ -1,13 +1,20 @@
 import {Ingredient} from '../shared/ingredient.model';
-import {Subject} from 'rxjs';
+import {forkJoin, Subject} from 'rxjs';
+import {Injectable} from '@angular/core';
+import {HttpClient} from '@angular/common/http';
+import {Observable} from 'rxjs/internal/Observable';
 
+@Injectable()
 export class ShoppingListService {
+
+  private readonly shoppingListUrl = 'http://localhost:8080/api/ingredient';
+
   ingredientsChanged = new Subject<Ingredient[]>();
   startedEditing = new Subject<number>();
-  private ingredients: Ingredient[] = [
-    new Ingredient('Pasta', 1),
-    new Ingredient('Tomatoes', 10)
-  ];
+  private ingredients: Ingredient[] = [];
+
+  constructor(private httpClient: HttpClient) {
+  }
 
   getIngredients() {
     return this.ingredients.slice();
@@ -18,22 +25,60 @@ export class ShoppingListService {
   }
 
   addIngredient(ingredient: Ingredient) {
-    this.ingredients.push(ingredient);
-    this.ingredientsChanged.next(this.getIngredients());
+    this.saveIngredient(ingredient).subscribe(response => {
+      this.ingredients.push(response);
+      this.emitChanges();
+    }, error => console.log(error));
   }
 
   addIngredients(ingredients: Ingredient[]) {
-    this.ingredients.push(...ingredients);
-    this.ingredientsChanged.next(this.getIngredients());
+    const calls = [];
+    ingredients.forEach((ingredient: Ingredient) => {
+      calls.push(this.saveIngredient(ingredient));
+    });
+    forkJoin(calls).subscribe((responses: Ingredient[]) => {
+      this.ingredients.push(...responses);
+      this.emitChanges();
+    });
   }
 
   updateIngredient(index: number, newIngredient: Ingredient) {
-    this.ingredients[index] = newIngredient;
-    this.ingredientsChanged.next(this.ingredients.slice());
+    this.httpClient.put(this.shoppingListUrl, newIngredient)
+        .subscribe((result: Ingredient) => {
+          this.ingredients[index] = result;
+          this.emitChanges();
+        });
   }
 
   removeIngredient(index: number) {
-    this.ingredients.splice(index, 1);
-    this.ingredientsChanged.next(this.ingredients.slice());
+    this.httpClient.delete(this.shoppingListUrl + '/' + this.ingredients[index].id)
+        .subscribe(() => {
+          this.ingredients.splice(index, 1);
+          this.emitChanges();
+        });
+  }
+
+  removeAllIngredients() {
+    this.httpClient.delete(this.shoppingListUrl)
+        .subscribe(() => {
+          this.ingredients.splice(0, this.ingredients.length);
+          this.emitChanges();
+        });
+  }
+
+  fetchIngredients() {
+    this.httpClient.get<Ingredient[]>(this.shoppingListUrl)
+        .subscribe((ingredients: Ingredient[]) => {
+          this.ingredients = ingredients;
+          this.emitChanges();
+        });
+  }
+
+  private saveIngredient(ingredient: Ingredient): Observable<Ingredient> {
+    return this.httpClient.post<Ingredient>(this.shoppingListUrl, ingredient);
+  }
+
+  private emitChanges(): void {
+    this.ingredientsChanged.next(this.getIngredients());
   }
 }
